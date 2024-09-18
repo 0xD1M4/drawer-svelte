@@ -1,5 +1,6 @@
 import './main.css'
 
+import type { Readable } from 'svelte/store'
 import type { TransitionConfig } from 'svelte/transition'
 import type { TStyles } from './styles.js'
 
@@ -21,14 +22,14 @@ export { applyStyles, preserveStyles }
 
 export const CTX = 'SVELTE_DRAWER'
 
-export function useDrawer(...props: Parameters<typeof setDrawerCtx>) {
-  const ctx = getContext(CTX)
-  if (ctx) return ctx as ReturnType<typeof setDrawerCtx>
+export const useDrawer = (
+  ...props: Parameters<typeof setDrawerCtx>
+): ReturnType<typeof setDrawerCtx> => getContext(CTX) || setDrawerCtx(...props)
 
-  return setDrawerCtx(...props)
-}
-
-export function setDrawerCtx({ closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD } = {}) {
+export function setDrawerCtx({
+  closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
+  onClosed: _onClosed = () => {},
+} = {}) {
   const meltDialog = createDialog({ onOpenChange })
 
   const direction = 'bottom'
@@ -70,14 +71,17 @@ export function setDrawerCtx({ closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD } = 
     return next
   }
 
+  function onClosed() {
+    isRunningAnimation = false
+    applyStyles(rootRef.$, rootBaseStyles)
+    _onClosed?.()
+  }
+
   function outTransition(node: HTMLElement): TransitionConfig {
     isRunningAnimation = true
 
     requestAnimationFrame(() => (node.dataset.vaulDrawerVisible = 'false'))
-    setTimeout(() => {
-      isRunningAnimation = false
-      applyStyles(rootRef.$, rootBaseStyles)
-    }, 500)
+    setTimeout(onClosed, 500)
 
     return { duration: 500 }
   }
@@ -94,6 +98,7 @@ export function setDrawerCtx({ closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD } = 
     applyStyles(rootRef.$, {
       borderRadius: BORDER_RADIUS,
       overflow: 'hidden',
+      willChange: 'transform, border-radius',
       transform: `scale(${scale}) translate3d(0, calc(env(safe-area-inset-top) + 14px), 0)`,
       transformOrigin: 'top',
       transitionProperty: 'transform, border-radius',
@@ -226,6 +231,21 @@ export function setDrawerCtx({ closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD } = 
     }
   }
 
+  const { portalled, overlay, content } = meltDialog.elements
+
+  function appendElementStore<T extends typeof portalled | typeof overlay | typeof content>(
+    elementStore: T,
+    appendedData: Record<string, number | string>,
+  ) {
+    const subscribe = elementStore.subscribe as Readable<never>['subscribe']
+
+    return Object.assign(elementStore, {
+      subscribe(run: Parameters<T['subscribe']>[0], invalidate: Parameters<T['subscribe']>[1]) {
+        return subscribe((value) => run(Object.assign(value, appendedData)), invalidate)
+      },
+    })
+  }
+
   return setContext(CTX, {
     meltDialog,
 
@@ -237,22 +257,19 @@ export function setDrawerCtx({ closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD } = 
 
     onDragHandlePointerDown,
 
+    portalled: appendElementStore(portalled, { 'data-vaul-drawer-visible': 'false' }),
+
     overlay: Object.assign(
-      (node: HTMLElement) => {
-        overlayRef.$ = node
-        return meltDialog.elements.overlay(node)
-      },
-      meltDialog.elements.overlay,
-      { 'data-vaul-overlay': '' },
+      (node: HTMLElement) => overlay((overlayRef.$ = node)),
+      appendElementStore(overlay, { 'data-vaul-overlay': '' }),
     ),
 
     content: Object.assign(
-      (node: HTMLElement) => {
-        drawerRef.$ = node
-        return meltDialog.elements.content(node)
-      },
-      meltDialog.elements.content,
-      { 'data-vaul-drawer': '', 'data-vaul-drawer-direction': 'bottom' },
+      (node: HTMLElement) => content((drawerRef.$ = node)),
+      appendElementStore(content, {
+        'data-vaul-drawer': '',
+        'data-vaul-drawer-direction': 'bottom',
+      }),
     ),
   })
 }

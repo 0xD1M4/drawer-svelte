@@ -2,16 +2,20 @@
   import { useDrawer } from '$lib/index.js'
 
   const {
+    portalled,
     overlay,
     content,
-    meltDialog,
-    onDragHandlePointerDown,
-    openDrawer,
+
     inTransition,
     outTransition,
-  } = useDrawer()
+    meltDialog,
+
+    onDragHandlePointerDown,
+    openDrawer,
+  } = useDrawer({ onClosed: () => console.log('Closed') })
+
   const {
-    elements: { trigger, portalled, title, description, close },
+    elements: { trigger, title, description, close },
     states: { open },
   } = meltDialog
 </script>
@@ -19,25 +23,12 @@
 <button {...$trigger} onclick={openDrawer}> Open Dialog Test </button>
 
 {#if $open}
-  <div
-    {...$portalled}
-    use:portalled
-    in:inTransition
-    out:outTransition
-    data-vaul-drawer-visible="false"
-  >
-    <div
-      {...$overlay}
-      use:overlay
-      data-vaul-overlay
-      class="fixed z-[1000] inset-0 bg-black/60"
-    ></div>
+  <div {...$portalled} use:portalled in:inTransition out:outTransition>
+    <div {...$overlay} use:overlay class="fixed z-[1000] inset-0 bg-black/60"></div>
 
     <div
       {...$content}
       use:content
-      data-vaul-drawer
-      data-vaul-drawer-direction="bottom"
       class="z-[1000] bg-zinc-100 flex fixed rounded-t-[10px] flex-col h-[96%] bottom-0 left-0 right-0"
     >
       <div
