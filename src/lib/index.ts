@@ -27,10 +27,13 @@ export const useDrawer = (
 ): ReturnType<typeof setDrawerCtx> => getContext(CTX) || setDrawerCtx(...props)
 
 export function setDrawerCtx({
+  forceVisible = true,
+  animationDelay = 60,
+  wrapperOverflow = 'hidden',
   closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
   onClosed: _onClosed = () => {},
 } = {}) {
-  const meltDialog = createDialog({ onOpenChange })
+  const meltDialog = createDialog({ forceVisible, onOpenChange })
 
   const direction = 'bottom'
 
@@ -58,17 +61,10 @@ export function setDrawerCtx({
   }
   function openDrawer() {
     meltDialog.states.open.set(true)
-    applyOpenAnimation()
   }
 
   function onOpenChange({ curr, next }: { curr: boolean; next: boolean }) {
-    if (isRunningAnimation) return curr
-
-    if (next === false) {
-      applyCloseAnimation()
-    }
-
-    return next
+    return isRunningAnimation ? curr : next
   }
 
   function onClosed() {
@@ -80,25 +76,35 @@ export function setDrawerCtx({
   function outTransition(node: HTMLElement): TransitionConfig {
     isRunningAnimation = true
 
-    requestAnimationFrame(() => (node.dataset.vaulDrawerVisible = 'false'))
-    setTimeout(onClosed, 500)
+    setTimeout(() => {
+      node.dataset.vaulDrawerVisible = 'false'
+      applyCloseAnimation()
+    }, animationDelay)
+    setTimeout(onClosed, 550 + animationDelay)
 
-    return { duration: 500 }
+    return { duration: 550 + animationDelay }
   }
   function inTransition(node: HTMLElement) {
     isRunningAnimation = true
 
-    requestAnimationFrame(() => (node.dataset.vaulDrawerVisible = 'true'))
-    setTimeout(() => (isRunningAnimation = false), 500)
+    setTimeout(() => {
+      node.dataset.vaulDrawerVisible = 'true'
+      applyOpenAnimation()
+    }, animationDelay)
+    setTimeout(() => {
+      applyStyles(drawerRef.$, { pointerEvents: '' })
+      isRunningAnimation = false
+    }, 500 + animationDelay)
 
     return { duration: 0 }
   }
 
   function applyOpenAnimation() {
+    applyStyles(drawerRef.$, { pointerEvents: 'none' })
+
     applyStyles(rootRef.$, {
       borderRadius: BORDER_RADIUS,
-      overflow: 'hidden',
-      willChange: 'transform, border-radius',
+      overflow: wrapperOverflow,
       transform: `scale(${scale}) translate3d(0, calc(env(safe-area-inset-top) + 14px), 0)`,
       transformOrigin: 'top',
       transitionProperty: 'transform, border-radius',
@@ -109,17 +115,17 @@ export function setDrawerCtx({
 
   function applyCloseAnimation() {
     applyStyles(drawerRef.$, {
-      transform: '',
+      transform: 'translate3d(0, 100%, 0)',
       transition: `transform ${BASE_TRANSITION}`,
     })
 
     applyStyles(overlayRef.$, {
-      opacity: '',
+      opacity: '0',
       transition: `opacity ${BASE_TRANSITION}`,
     })
 
     applyStyles(rootRef.$, {
-      transform: rootBaseStyles.transform,
+      transform: rootBaseStyles.transform || 'translate3d(0, 0, 0)',
       borderRadius: rootBaseStyles.borderRadius,
       transition: `all ${BASE_TRANSITION}`,
     })
