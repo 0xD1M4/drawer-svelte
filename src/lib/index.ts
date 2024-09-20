@@ -29,7 +29,7 @@ export const useDrawer = (
 export function setDrawerCtx({
   forceVisible = true,
   animationDelay = 60,
-  wrapperOverflow = 'hidden',
+  wrapperOverflow = '',
   closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
   onClosed: _onClosed = () => {},
 } = {}) {
@@ -113,11 +113,14 @@ export function setDrawerCtx({
     })
   }
 
-  function applyCloseAnimation() {
+  const applyDrawerCloseAnimation = () =>
     applyStyles(drawerRef.$, {
       transform: 'translate3d(0, 100%, 0)',
       transition: `transform ${BASE_TRANSITION}`,
     })
+
+  function applyCloseAnimation() {
+    applyDrawerCloseAnimation()
 
     applyStyles(overlayRef.$, {
       opacity: '0',
@@ -127,7 +130,7 @@ export function setDrawerCtx({
     applyStyles(rootRef.$, {
       transform: rootBaseStyles.transform || 'translate3d(0, 0, 0)',
       borderRadius: rootBaseStyles.borderRadius,
-      transition: `all ${BASE_TRANSITION}`,
+      transition: `transform ${BASE_TRANSITION}, border-radius ${BASE_TRANSITION}`,
     })
   }
 
@@ -140,6 +143,8 @@ export function setDrawerCtx({
 
     const rootNode = rootRef.$
     if (!rootNode) return
+
+    e.preventDefault()
 
     const handleNode = e.currentTarget
 
@@ -155,7 +160,7 @@ export function setDrawerCtx({
     const startOverlayStyles = preserveStyles(overlayNode, { ...MODIFIED_STYLES })
     const startDrawerStyles = preserveStyles(drawerNode, { ...MODIFIED_STYLES })
 
-    applyStyles(drawerNode, { transition: 'none' })
+    applyStyles(drawerNode, { transition: 'none', pointerEvents: 'none' })
     applyStyles(overlayNode, { transition: 'none' })
     applyStyles(rootNode, { transition: 'none' })
 
@@ -182,6 +187,8 @@ export function setDrawerCtx({
       }
 
       if (velocity > VELOCITY_THRESHOLD) {
+        // NOTE: Starting drawer's container close animation right away, otherwise `animationDelay` causes visible lag
+        applyDrawerCloseAnimation()
         return closeDrawer()
       }
 

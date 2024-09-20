@@ -15,6 +15,7 @@ export function applyStyles(node: undefined | null | HTMLElement, rules: TStyles
 }
 
 export const MODIFIED_STYLES: TStyles = {
+  pointerEvents: '',
   borderRadius: '',
   overflow: '',
   opacity: '',
