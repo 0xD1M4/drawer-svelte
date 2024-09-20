@@ -38,7 +38,7 @@ export function setDrawerCtx({
   const direction = 'bottom'
 
   const rootRef = ss<HTMLElement | null>(null)
-  const drawerRef = ss<HTMLElement | null>(null)
+  const contentRef = ss<HTMLElement | null>(null)
   const overlayRef = ss<HTMLElement | null>(null)
   const scale = BROWSER ? getScale() : 1
 
@@ -92,7 +92,7 @@ export function setDrawerCtx({
       applyOpenAnimation()
     }, animationDelay)
     setTimeout(() => {
-      applyStyles(drawerRef.$, { pointerEvents: '' })
+      applyStyles(contentRef.$, { pointerEvents: '' })
       isRunningAnimation = false
     }, 500 + animationDelay)
 
@@ -100,7 +100,7 @@ export function setDrawerCtx({
   }
 
   function applyOpenAnimation() {
-    applyStyles(drawerRef.$, { pointerEvents: 'none' })
+    applyStyles(contentRef.$, { pointerEvents: 'none' })
 
     applyStyles(rootRef.$, {
       borderRadius: BORDER_RADIUS,
@@ -113,14 +113,14 @@ export function setDrawerCtx({
     })
   }
 
-  const applyDrawerCloseAnimation = () =>
-    applyStyles(drawerRef.$, {
+  const applyContentCloseAnimation = () =>
+    applyStyles(contentRef.$, {
       transform: 'translate3d(0, 100%, 0)',
       transition: `transform ${BASE_TRANSITION}`,
     })
 
   function applyCloseAnimation() {
-    applyDrawerCloseAnimation()
+    applyContentCloseAnimation()
 
     applyStyles(overlayRef.$, {
       opacity: '0',
@@ -135,8 +135,8 @@ export function setDrawerCtx({
   }
 
   function onDragHandlePointerDown(e: PointerEvent & { currentTarget: HTMLElement }) {
-    const drawerNode = drawerRef.$
-    if (!drawerNode) return
+    const contentNode = contentRef.$
+    if (!contentNode) return
 
     const overlayNode = overlayRef.$
     if (!overlayNode) return
@@ -152,22 +152,22 @@ export function setDrawerCtx({
     handleNode.addEventListener('pointermove', onPointerMove, { passive: true })
     handleNode.addEventListener('pointerup', onPointerUp, { once: true })
 
-    const drawerHeight = drawerNode.getBoundingClientRect().height || 0
+    const contentHeight = contentNode.getBoundingClientRect().height || 0
     const dragStartTime = Date.now()
     const pointerStart = e.clientY
 
     const startRootStyles = preserveStyles(rootNode, { ...MODIFIED_STYLES })
     const startOverlayStyles = preserveStyles(overlayNode, { ...MODIFIED_STYLES })
-    const startDrawerStyles = preserveStyles(drawerNode, { ...MODIFIED_STYLES })
+    const startContentStyles = preserveStyles(contentNode, { ...MODIFIED_STYLES })
 
-    applyStyles(drawerNode, { transition: 'none', pointerEvents: 'none' })
+    applyStyles(contentNode, { transition: 'none', pointerEvents: 'none' })
     applyStyles(overlayNode, { transition: 'none' })
     applyStyles(rootNode, { transition: 'none' })
 
-    let drawerTranslateValue = 0
+    let contentTranslateValue = 0
 
     function resetStyles() {
-      applyStyles(drawerNode, startDrawerStyles)
+      applyStyles(contentNode, startContentStyles)
       applyStyles(overlayNode, startOverlayStyles)
       applyStyles(rootNode, startRootStyles)
     }
@@ -188,13 +188,13 @@ export function setDrawerCtx({
 
       if (velocity > VELOCITY_THRESHOLD) {
         // NOTE: Starting drawer's container close animation right away, otherwise `animationDelay` causes visible lag
-        applyDrawerCloseAnimation()
+        applyContentCloseAnimation()
         return closeDrawer()
       }
 
-      const visibleDrawerHeight = Math.min(drawerHeight, window.innerHeight)
+      const visibleContentHeight = Math.min(contentHeight, window.innerHeight)
 
-      if (drawerTranslateValue / visibleDrawerHeight > closeThreshold) {
+      if (contentTranslateValue / visibleContentHeight > closeThreshold) {
         return closeDrawer()
       }
 
@@ -209,14 +209,14 @@ export function setDrawerCtx({
       const absDraggedDistance = Math.abs(draggedDistance)
 
       // Calculate the percentage dragged, where 1 is the closed position
-      const percentageDragged = absDraggedDistance / drawerHeight
+      const percentageDragged = absDraggedDistance / contentHeight
 
       // Run this only if snapPoints are not defined or if we are at the last snap point (highest one)
       if (isDraggingInDirection) {
         const dampenedDraggedDistance = dampenValue(draggedDistance)
         const translateValue = Math.min(dampenedDraggedDistance * -1, 0)
 
-        return applyStyles(drawerNode, { transform: `translate3d(0, ${translateValue}px, 0)` })
+        return applyStyles(contentNode, { transform: `translate3d(0, ${translateValue}px, 0)` })
       }
 
       const opacityValue = 1 - percentageDragged
@@ -236,10 +236,10 @@ export function setDrawerCtx({
         })
       }
 
-      drawerTranslateValue = absDraggedDistance
+      contentTranslateValue = absDraggedDistance
 
-      applyStyles(drawerNode, {
-        transform: `translate3d(0, ${drawerTranslateValue}px, 0)`,
+      applyStyles(contentNode, {
+        transform: `translate3d(0, ${contentTranslateValue}px, 0)`,
       })
     }
   }
@@ -278,7 +278,7 @@ export function setDrawerCtx({
     ),
 
     content: Object.assign(
-      (node: HTMLElement) => content((drawerRef.$ = node)),
+      (node: HTMLElement) => content((contentRef.$ = node)),
       appendElementStore(content, {
         'data-vaul-drawer': '',
         'data-vaul-drawer-direction': 'bottom',
