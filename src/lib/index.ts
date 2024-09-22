@@ -113,11 +113,20 @@ export function setDrawerCtx({
     })
   }
 
-  const applyContentCloseAnimation = () =>
+  function applyContentCloseAnimation() {
     applyStyles(contentRef.$, {
       transform: 'translate3d(0, 100%, 0)',
       transition: `transform ${BASE_TRANSITION}`,
     })
+  }
+
+  function applyRootCloseAnimation() {
+    applyStyles(rootRef.$, {
+      transform: rootBaseStyles.transform || 'translate3d(0, 0, 0)',
+      borderRadius: rootBaseStyles.borderRadius,
+      transition: `transform ${BASE_TRANSITION}, border-radius ${BASE_TRANSITION}`,
+    })
+  }
 
   function applyCloseAnimation() {
     applyContentCloseAnimation()
@@ -127,11 +136,7 @@ export function setDrawerCtx({
       transition: `opacity ${BASE_TRANSITION}`,
     })
 
-    applyStyles(rootRef.$, {
-      transform: rootBaseStyles.transform || 'translate3d(0, 0, 0)',
-      borderRadius: rootBaseStyles.borderRadius,
-      transition: `transform ${BASE_TRANSITION}, border-radius ${BASE_TRANSITION}`,
-    })
+    applyRootCloseAnimation()
   }
 
   function onDragHandlePointerDown(e: PointerEvent & { currentTarget: HTMLElement }) {
@@ -189,6 +194,7 @@ export function setDrawerCtx({
       if (velocity > VELOCITY_THRESHOLD) {
         // NOTE: Starting drawer's container close animation right away, otherwise `animationDelay` causes visible lag
         applyContentCloseAnimation()
+        applyRootCloseAnimation()
         return closeDrawer()
       }
 
