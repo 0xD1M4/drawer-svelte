@@ -31,10 +31,7 @@
       use:content
       class="z-[1000] bg-zinc-100 flex fixed rounded-t-[10px] flex-col h-[96%] bottom-0 left-0 right-0"
     >
-      <div
-        class="handle-overlay flex items-center justify-center bg-green-900 opacity-50 absolute -top-[50px] h-[65px] left-0 right-0"
-        use:dragOverlay
-      >
+      <div use:dragOverlay class="handle-overlay flex items-end justify-center">
         <div class="handle bg-[red] absolute w-[30px] h-[20px]"></div>
       </div>
 

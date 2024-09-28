@@ -2,6 +2,14 @@
   will-change: transform;
 }
 
+[data-vaul-drag-handle] {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 500px;
+  top: -490px;
+}
+
 [data-vaul-drag-handle],
 [data-vaul-drag-handle] * {
   user-select: none !important;

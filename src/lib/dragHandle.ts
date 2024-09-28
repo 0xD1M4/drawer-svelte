@@ -2,6 +2,8 @@ import type { SS } from 'svelte-runes'
 import { VELOCITY_THRESHOLD } from './constants.js'
 import { applyStyles, dampenValue, MODIFIED_STYLES, preserveStyles } from './styles.js'
 
+const DRAWER_SAFE_HEIGHT = 15
+
 type THandleData = {
   contentRef: SS<null | HTMLElement>
   overlayRef: SS<null | HTMLElement>
@@ -36,10 +38,10 @@ export function useDragHandle({
     const rootNode = rootRef.$
     if (!rootNode) return
 
-    console.log(e)
     e.preventDefault()
 
     const pointerId = e.pointerId
+    const pointerStart = e.clientY
     const handleNode = e.currentTarget as HTMLElement
 
     handleNode.setPointerCapture(pointerId)
@@ -49,7 +51,6 @@ export function useDragHandle({
 
     const contentHeight = contentNode.getBoundingClientRect().height || 0
     const dragStartTime = Date.now()
-    const pointerStart = e.clientY
 
     const rootDragStartStyles = preserveStyles(rootNode, MODIFIED_STYLES)
     const overlayDragStartStyles = preserveStyles(overlayNode, MODIFIED_STYLES)
@@ -64,6 +65,12 @@ export function useDragHandle({
 
     let contentTranslateValue = 0
     let isPointerUpCalled = false
+    let isPointerMoved = false
+    let isOutsideClicked = false
+    if (e.target === handleNode) {
+      const { top, height } = handleNode.getBoundingClientRect()
+      isOutsideClicked = top + height - DRAWER_SAFE_HEIGHT >= pointerStart
+    }
 
     function resetStyles() {
       applyStyles(contentNode, contentDragStartStyles)
@@ -98,6 +105,10 @@ export function useDragHandle({
       const distMoved = pointerStart - e.clientY
       const velocity = Math.abs(distMoved) / (dragEndTime - dragStartTime)
 
+      if (isOutsideClicked && isPointerMoved === false) {
+        return closeDrawer()
+      }
+
       // Moved upwards, don't do anything
       if (direction === 'bottom' ? distMoved > 0 : distMoved < 0) {
         return resetStyles()
@@ -122,6 +133,10 @@ export function useDragHandle({
     function onPointerMove(e: PointerEvent) {
       const draggedDistance = pointerStart - e.clientY
       const isDraggingInDirection = draggedDistance > 0
+
+      if (isPointerMoved === false && Math.abs(draggedDistance) > 4) {
+        isPointerMoved = true
+      }
 
       // We need to capture last time when drag with scroll was triggered and have a timeout between
       const absDraggedDistance = Math.abs(draggedDistance)
