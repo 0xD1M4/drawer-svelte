@@ -8,7 +8,14 @@ import { getContext, onMount, setContext } from 'svelte'
 import { ss } from 'svelte-runes'
 import { BROWSER } from 'esm-env'
 import { createDialog } from '@melt-ui/svelte'
-import { applyStyles, getScale, MODIFIED_STYLES, preserveStyles, dampenValue } from './styles.js'
+import {
+  applyStyles,
+  getScale,
+  MODIFIED_STYLES,
+  preserveStyles,
+  dampenValue,
+  BODY_STYLES,
+} from './styles.js'
 import {
   BASE_TRANSITION,
   BORDER_RADIUS,
@@ -33,7 +40,7 @@ export function setDrawerCtx({
   closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
   onClosed: _onClosed = () => {},
 } = {}) {
-  const meltDialog = createDialog({ forceVisible, onOpenChange })
+  const meltDialog = createDialog({ preventScroll: false, forceVisible, onOpenChange })
 
   const direction = 'bottom'
 
@@ -43,6 +50,7 @@ export function setDrawerCtx({
   const scale = BROWSER ? getScale() : 1
 
   let rootBaseStyles: TStyles = {}
+  let bodyBaseStyles: TStyles = {}
   let isRunningAnimation = false
 
   onMount(() => {
@@ -52,14 +60,19 @@ export function setDrawerCtx({
     if (!root) return
 
     rootBaseStyles = preserveStyles(root, MODIFIED_STYLES)
+    bodyBaseStyles = preserveStyles(document.body, BODY_STYLES)
 
-    return () => applyStyles(root, rootBaseStyles)
+    return () => {
+      applyStyles(root, rootBaseStyles)
+      applyStyles(document.body, bodyBaseStyles)
+    }
   })
 
   function closeDrawer() {
     meltDialog.states.open.set(false)
   }
   function openDrawer() {
+    applyStyles(document.body, { overflow: 'hidden', pointerEvents: 'none' })
     meltDialog.states.open.set(true)
   }
 
@@ -70,6 +83,7 @@ export function setDrawerCtx({
   function onClosed() {
     isRunningAnimation = false
     applyStyles(rootRef.$, rootBaseStyles)
+    applyStyles(document.body, bodyBaseStyles)
     _onClosed?.()
   }
 
@@ -93,6 +107,7 @@ export function setDrawerCtx({
     }, animationDelay)
     setTimeout(() => {
       applyStyles(contentRef.$, { pointerEvents: '' })
+      applyStyles(document.body, { pointerEvents: '' })
       isRunningAnimation = false
     }, 500 + animationDelay)
 
@@ -161,20 +176,24 @@ export function setDrawerCtx({
     const dragStartTime = Date.now()
     const pointerStart = e.clientY
 
-    const startRootStyles = preserveStyles(rootNode, { ...MODIFIED_STYLES })
-    const startOverlayStyles = preserveStyles(overlayNode, { ...MODIFIED_STYLES })
-    const startContentStyles = preserveStyles(contentNode, { ...MODIFIED_STYLES })
+    const rootDragStartStyles = preserveStyles(rootNode, MODIFIED_STYLES)
+    const overlayDragStartStyles = preserveStyles(overlayNode, MODIFIED_STYLES)
+    const contentDragStartStyles = preserveStyles(contentNode, MODIFIED_STYLES)
+    const bodyDragStartStyles = preserveStyles(document.body, { pointerEvents: '' })
 
-    applyStyles(contentNode, { transition: 'none', pointerEvents: 'none' })
-    applyStyles(overlayNode, { transition: 'none' })
-    applyStyles(rootNode, { transition: 'none' })
+    const ACTIVE_DRAG_STYLES = { transition: 'none', pointerEvents: 'none' }
+    applyStyles(contentNode, ACTIVE_DRAG_STYLES)
+    applyStyles(overlayNode, ACTIVE_DRAG_STYLES)
+    applyStyles(rootNode, ACTIVE_DRAG_STYLES)
+    applyStyles(document.body, { pointerEvents: 'none' })
 
     let contentTranslateValue = 0
 
     function resetStyles() {
-      applyStyles(contentNode, startContentStyles)
-      applyStyles(overlayNode, startOverlayStyles)
-      applyStyles(rootNode, startRootStyles)
+      applyStyles(contentNode, contentDragStartStyles)
+      applyStyles(overlayNode, overlayDragStartStyles)
+      applyStyles(rootNode, rootDragStartStyles)
+      applyStyles(document.body, bodyDragStartStyles)
     }
 
     function onPointerUp(e: PointerEvent) {

@@ -32,9 +32,9 @@
       class="z-[1000] bg-zinc-100 flex fixed rounded-t-[10px] flex-col h-[96%] bottom-0 left-0 right-0"
     >
       <div
+        data-vaul-drag-handle
         class="handle-overlay flex items-center justify-center"
         onpointerdown={onDragHandlePointerDown}
-        style="touch-action: none;"
       >
         <div class="handle bg-[red] absolute w-[30px] h-[20px]"></div>
       </div>

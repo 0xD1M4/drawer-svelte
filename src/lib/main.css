@@ -1,4 +1,16 @@
+[data-vaul-drawer-wrapper] {
+  will-change: transform;
+}
+
+[data-vaul-drag-handle],
+[data-vaul-drag-handle] * {
+  user-select: none !important;
+  touch-action: none !important;
+  -webkit-touch-callout: none !important;
+}
+
 [data-vaul-drawer] {
+  will-change: transform;
   touch-action: none;
   transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -23,6 +35,7 @@
 }
 
 [data-vaul-overlay] {
+  will-change: opacity;
   opacity: 0;
   transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
