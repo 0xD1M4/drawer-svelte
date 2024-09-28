@@ -166,11 +166,13 @@ export function setDrawerCtx({
 
     e.preventDefault()
 
+    const pointerId = e.pointerId
     const handleNode = e.currentTarget
 
-    handleNode.setPointerCapture(e.pointerId)
+    handleNode.setPointerCapture(pointerId)
     handleNode.addEventListener('pointermove', onPointerMove, { passive: true })
     handleNode.addEventListener('pointerup', onPointerUp, { once: true })
+    handleNode.addEventListener('touchend', ensurePointerUp, { once: true })
 
     const contentHeight = contentNode.getBoundingClientRect().height || 0
     const dragStartTime = Date.now()
@@ -188,6 +190,7 @@ export function setDrawerCtx({
     applyStyles(document.body, { pointerEvents: 'none' })
 
     let contentTranslateValue = 0
+    let isPointerUpCalled = false
 
     function resetStyles() {
       applyStyles(contentNode, contentDragStartStyles)
@@ -196,10 +199,27 @@ export function setDrawerCtx({
       applyStyles(document.body, bodyDragStartStyles)
     }
 
-    function onPointerUp(e: PointerEvent) {
+    // NOTE: On iOS devices a quick pointer down->up action do not trigger pointerup event.
+    function ensurePointerUp() {
+      queueMicrotask(() => {
+        if (isPointerUpCalled) return
+
+        cleanPointerHandlers()
+
+        return resetStyles()
+      })
+    }
+
+    function cleanPointerHandlers() {
       // @ts-expect-error Ignoring options error
       handleNode.removeEventListener('pointermove', onPointerMove, { passive: true })
-      handleNode.releasePointerCapture(e.pointerId)
+      handleNode.releasePointerCapture(pointerId)
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      isPointerUpCalled = true
+
+      cleanPointerHandlers()
 
       const dragEndTime = Date.now()
       const distMoved = pointerStart - e.clientY
