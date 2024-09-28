@@ -76,7 +76,10 @@ export function setDrawerCtx(
   const rootRef = ss<HTMLElement | null>(null)
   const contentRef = ss<HTMLElement | null>(null)
   const overlayRef = ss<HTMLElement | null>(null)
+
+  const scrollbarPadding = BROWSER ? window.innerWidth - document.body.offsetWidth : 0
   const scale = BROWSER ? getScale() : 1
+
   const { dragOverlay } = useDragHandle({
     rootRef,
     contentRef,
@@ -120,7 +123,9 @@ export function setDrawerCtx(
     meltDialog.states.open.set(false)
   }
   function openDrawer() {
+    if (scrollbarPadding) applyStyles(rootRef.$, { paddingRight: scrollbarPadding + 'px' })
     applyStyles(document.body, { overflow: 'hidden', pointerEvents: 'none' })
+
     meltDialog.states.open.set(true)
   }
 

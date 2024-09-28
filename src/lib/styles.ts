@@ -33,6 +33,7 @@ export const MODIFIED_STYLES: TStyles = {
   transitionProperty: '',
   transitionDuration: '',
   transitionTimingFunction: '',
+  paddingRight: '',
 }
 
 export function getScale() {
