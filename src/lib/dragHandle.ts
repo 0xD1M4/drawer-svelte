@@ -4,7 +4,7 @@ import { applyStyles, dampenValue, MODIFIED_STYLES, preserveStyles } from './sty
 
 const DRAWER_SAFE_HEIGHT = 15
 
-type THandleData = {
+type THandleProps = {
   contentRef: SS<null | HTMLElement>
   overlayRef: SS<null | HTMLElement>
   rootRef: SS<null | HTMLElement>
@@ -12,9 +12,7 @@ type THandleData = {
   scale: number
   closeThreshold: number
 
-  applyContentCloseAnimation: () => void
-  applyRootCloseAnimation: () => void
-  closeDrawer: () => void
+  closeDrawer: (resetStyles?: () => void) => void
 }
 
 export function useDragHandle({
@@ -24,10 +22,8 @@ export function useDragHandle({
   direction,
   scale,
   closeThreshold,
-  applyContentCloseAnimation,
-  applyRootCloseAnimation,
   closeDrawer,
-}: THandleData) {
+}: THandleProps) {
   function onDragHandlePointerDown(e: PointerEvent) {
     const contentNode = contentRef.$
     if (!contentNode) return
@@ -106,7 +102,7 @@ export function useDragHandle({
       const velocity = Math.abs(distMoved) / (dragEndTime - dragStartTime)
 
       if (isOutsideClicked && isPointerMoved === false) {
-        return closeDrawer()
+        return closeDrawer(resetStyles)
       }
 
       // Moved upwards, don't do anything
@@ -115,16 +111,13 @@ export function useDragHandle({
       }
 
       if (velocity > VELOCITY_THRESHOLD) {
-        // NOTE: Starting drawer's container close animation right away, otherwise `animationDelay` causes visible lag
-        applyContentCloseAnimation()
-        applyRootCloseAnimation()
-        return closeDrawer()
+        return closeDrawer(resetStyles)
       }
 
       const visibleContentHeight = Math.min(contentHeight, window.innerHeight)
 
       if (contentTranslateValue / visibleContentHeight > closeThreshold) {
-        return closeDrawer()
+        return closeDrawer(resetStyles)
       }
 
       resetStyles()

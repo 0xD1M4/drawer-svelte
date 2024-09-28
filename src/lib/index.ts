@@ -8,21 +8,13 @@ import { getContext, onMount, setContext } from 'svelte'
 import { ss } from 'svelte-runes'
 import { BROWSER } from 'esm-env'
 import { createDialog } from '@melt-ui/svelte'
-import {
-  applyStyles,
-  getScale,
-  MODIFIED_STYLES,
-  preserveStyles,
-  dampenValue,
-  BODY_STYLES,
-} from './styles.js'
+import { applyStyles, getScale, MODIFIED_STYLES, preserveStyles, BODY_STYLES } from './styles.js'
 import {
   BASE_TRANSITION,
   BORDER_RADIUS,
   CLOSE_WHEN_HIDDEN_THRESHOLD,
   TIMING_FUNCTION,
   TRANSITION_DURATION,
-  VELOCITY_THRESHOLD,
 } from './constants.js'
 import { useDragHandle } from './dragHandle.js'
 
@@ -34,13 +26,49 @@ export const useDrawer = (
   ...props: Parameters<typeof setDrawerCtx>
 ): ReturnType<typeof setDrawerCtx> => getContext(CTX) || setDrawerCtx(...props)
 
-export function setDrawerCtx({
-  forceVisible = true,
-  animationDelay = 60,
-  wrapperOverflow = '',
-  closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
-  onClosed: _onClosed = () => {},
-} = {}) {
+type TSettings = {
+  /**
+   * @default true
+   */
+  forceVisible?: boolean
+
+  /**
+   * @default 60
+   */
+  animationDelay?: number
+
+  /**
+   * @default ''
+   */
+  wrapperOverflow?: '' | 'hidden' | 'clip'
+
+  closeThreshold?: number
+
+  /**
+   * Callback is called after drawer was closed
+   * @returns void
+   */
+  onClosed?: () => void
+
+  /**
+   * Callback is called before deciding whether the drawer should be closed.
+   *
+   * If the callback returns `true`, the drawer will be closed.
+   * Returning `false` will prevent the drawer from being closed and leave it open.
+   * @returns boolean
+   */
+  onBeforeClose?: () => boolean
+}
+export function setDrawerCtx(
+  {
+    forceVisible = true,
+    animationDelay = 60,
+    wrapperOverflow = '',
+    closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
+    onClosed: _onClosed,
+    onBeforeClose,
+  } = {} as TSettings,
+) {
   const meltDialog = createDialog({ preventScroll: false, forceVisible, onOpenChange })
 
   const direction = 'bottom'
@@ -56,8 +84,6 @@ export function setDrawerCtx({
     scale,
     direction,
     closeThreshold,
-    applyContentCloseAnimation,
-    applyRootCloseAnimation,
     closeDrawer,
   })
 
@@ -80,7 +106,17 @@ export function setDrawerCtx({
     }
   })
 
-  function closeDrawer() {
+  function closeDrawer(resetStyles?: () => void) {
+    if (onBeforeClose?.() === false) {
+      if (resetStyles) return resetStyles()
+
+      return contentRef.$ && inTransition(contentRef.$)
+    }
+
+    // NOTE: Starting drawer's container close animation right away, otherwise `animationDelay` causes visible lag
+    applyContentCloseAnimation()
+    applyRootCloseAnimation()
+
     meltDialog.states.open.set(false)
   }
   function openDrawer() {
