@@ -1,7 +1,3 @@
-[data-vaul-drawer-wrapper] {
-  will-change: transform;
-}
-
 [data-vaul-drag-handle] {
   position: absolute;
   left: 0;

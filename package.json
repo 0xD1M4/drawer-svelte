@@ -11,7 +11,10 @@
     "svelte",
     "runes",
     "hooks",
-    "drawer"
+    "drawer",
+    "svelte 5",
+    "vaul",
+    "performance"
   ],
   "scripts": {
     "dev": "vite dev",

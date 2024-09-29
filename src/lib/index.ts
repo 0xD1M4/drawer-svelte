@@ -18,7 +18,7 @@ import {
 } from './constants.js'
 import { useDragHandle } from './dragHandle.js'
 
-export { applyStyles, preserveStyles }
+export { applyStyles, preserveStyles, type TStyles }
 
 export const CTX = 'SVELTE_DRAWER'
 
