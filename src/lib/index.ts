@@ -7,7 +7,7 @@ import type { TStyles } from './styles.js'
 import { getContext, onMount, setContext } from 'svelte'
 import { ss } from 'svelte-runes'
 import { BROWSER } from 'esm-env'
-import { createDialog } from '@melt-ui/svelte'
+import { createDialog, type CreateDialogProps } from '@melt-ui/svelte'
 import { applyStyles, getScale, MODIFIED_STYLES, preserveStyles, BODY_STYLES } from './styles.js'
 import {
   BASE_TRANSITION,
@@ -67,9 +67,10 @@ export function setDrawerCtx(
     closeThreshold = CLOSE_WHEN_HIDDEN_THRESHOLD,
     onClosed: _onClosed,
     onBeforeClose,
-  } = {} as TSettings,
+    ...rest
+  } = {} as TSettings & CreateDialogProps,
 ) {
-  const meltDialog = createDialog({ preventScroll: false, forceVisible, onOpenChange })
+  const meltDialog = createDialog({ preventScroll: false, ...rest, forceVisible, onOpenChange })
 
   const direction = 'bottom'
 
